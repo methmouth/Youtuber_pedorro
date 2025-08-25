@@ -1,0 +1,10 @@
+google-generativeai
+requests
+beautifulsoup4
+gspread
+oauth2client
+google-api-python-client
+python-dotenv
+duckduckgo-search
+pytrends
+gTTS
