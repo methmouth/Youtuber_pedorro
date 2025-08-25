@@ -20,7 +20,18 @@ try: gc = gspread.service_account(filename='credentials.json') sh = gc.open(os.g
 
 def get_trending_topics(country="mexico"): """Obtiene tendencias desde Google Trends usando pytrends.""" logging.info("Buscando temas en tendencia...") try: pytrends = TrendReq(hl='es-MX', tz=360) pytrends.build_payload(kw_list=["Noticias"], cat=0, timeframe='now 1-d', geo='MX', gprop='') trending = pytrends.trending_searches(pn=country) return trending[0].tolist()[:3] except Exception as e: logging.error(f"Error obteniendo tendencias: {e}") return []
 
-def get_context_for_topic(topic): """Obtiene contexto de noticias vía DuckDuckGo Search (fallback NewsAPI).""" logging.info(f"Buscando contexto para: {topic}") context = "" try: with DDGS() as ddgs: results = list(ddgs.news(topic, region='mx-es', safesearch='off', max_results=3)) context = " ".join([r['body'] for r in results]) except Exception as e: logging.warning(f"Error en DuckDuckGo: {e}")
+def get_context_for_topic(topic):
+    """Obtiene contexto de noticias usando NewsAPI (sin DuckDuckGo)."""
+    logging.info(f"Buscando contexto para: {topic}")
+    context = ""
+    try:
+        url = f"https://newsapi.org/v2/everything?q={topic}&language=es&sortBy=publishedAt&pageSize=3&apiKey={os.getenv('NEWSAPI_KEY')}"
+        resp = requests.get(url)
+        articles = resp.json().get("articles", [])
+        context = " ".join([a["description"] for a in articles if a.get("description")])
+    except Exception as e:
+        logging.error(f"Error en NewsAPI: {e}")
+    return context[:2000]
 
 # Fallback básico: NewsAPI si está disponible
 if not context and os.getenv("NEWSAPI_KEY"):
